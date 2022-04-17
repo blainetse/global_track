@@ -1,0 +1,40 @@
+name: GlobalTrack
+channels:
+  - defaults
+  - pytorch
+  - conda-forge
+dependencies:
+  # 注意 1： dependencies 里面版本指定与 pip 里面版本指定的区别
+  # 这里使用的是 =, 或者 > <，而 pip 里面使用的是 == >= <=
+  - python=3.8
+  ## 使用 conda install 安装 PyTorch，注意原来指定的通道这里放在 `channels` 里面了
+  # 方案1
+  - pytorch=1.10.1
+  - torchvision==0.11.2
+  - torchaudio==0.10.1
+  - cudatoolkit=11.3  # 由于系统中已经安装配置了 CUDA，这里可以不安装
+  # 方案2：注意以下 CUDA 需要指定，不然可能会默认安装 CPU 版本！指定了结果还是给我默认安装 CPU 版的！
+  # - cudatoolkit=11.1
+  # - pytorch=1.8.1
+  # - torchvision=0.9.1
+  # - torchaudio=0.8.1
+  ## END
+  - pip
+  - pip:
+    - black
+    - imageio
+    - mmcv==0.4.3
+    - numpy
+    - opencv-python
+    - opencv-python-headless
+    - Pillow
+    - scikit-image
+    - scikit-learn
+    - scipy
+    - Shapely
+    # 以下是使用 pip install 安装的配置
+    # - torch==1.8.1+cu111
+    # - torchaudio==0.8.1
+    # - torchvision==0.9.1+cu111
+    # - -f https://download.pytorch.org/whl/torch_stable.html
+prefix: ~/anaconda3/envs/GlobalTrack  # 不会发生作用，只是给其他人说明安装的位置
