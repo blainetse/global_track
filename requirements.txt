@@ -45,3 +45,4 @@ torchvision==0.9.1+cu111
 typed-ast
 typing_extensions
 zipp
+-f https://download.pytorch.org/whl/lts/1.8/torch_lts.html

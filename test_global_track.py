@@ -20,5 +20,5 @@ if __name__ == "__main__":
         # data.EvaluatorGOT10k(subset='test')
     ]
     for e in evaluators:
-        e.run(tracker, visualize=False)
+        e.run(tracker, visualize=True)
         e.report(tracker.name)
