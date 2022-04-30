@@ -8,6 +8,7 @@ from mmdet.core import force_fp32
 from ..registry import ROI_EXTRACTORS
 
 
+# TODO: 对单个 feature map 的 RoI 操作，将目标从 feature map 中提取出来
 @ROI_EXTRACTORS.register_module
 class SingleRoIExtractor(nn.Module):
     """Extract RoI features from a single level feature map.
@@ -22,11 +23,7 @@ class SingleRoIExtractor(nn.Module):
         finest_scale (int): Scale threshold of mapping to level 0.
     """
 
-    def __init__(self,
-                 roi_layer,
-                 out_channels,
-                 featmap_strides,
-                 finest_scale=56):
+    def __init__(self, roi_layer, out_channels, featmap_strides, finest_scale=56):
         super(SingleRoIExtractor, self).__init__()
         self.roi_layers = self.build_roi_layers(roi_layer, featmap_strides)
         self.out_channels = out_channels
@@ -44,11 +41,13 @@ class SingleRoIExtractor(nn.Module):
 
     def build_roi_layers(self, layer_cfg, featmap_strides):
         cfg = layer_cfg.copy()
-        layer_type = cfg.pop('type')
+        # TODO: type = "RoIAlign"
+        layer_type = cfg.pop("type")
         assert hasattr(ops, layer_type)
         layer_cls = getattr(ops, layer_type)
         roi_layers = nn.ModuleList(
-            [layer_cls(spatial_scale=1 / s, **cfg) for s in featmap_strides])
+            [layer_cls(spatial_scale=1 / s, **cfg) for s in featmap_strides]
+        )
         return roi_layers
 
     def map_roi_levels(self, rois, num_levels):
@@ -67,7 +66,8 @@ class SingleRoIExtractor(nn.Module):
             Tensor: Level index (0-based) of each RoI, shape (k, )
         """
         scale = torch.sqrt(
-            (rois[:, 3] - rois[:, 1] + 1) * (rois[:, 4] - rois[:, 2] + 1))
+            (rois[:, 3] - rois[:, 1] + 1) * (rois[:, 4] - rois[:, 2] + 1)
+        )
         target_lvls = torch.floor(torch.log2(scale / self.finest_scale + 1e-6))
         target_lvls = target_lvls.clamp(min=0, max=num_levels - 1).long()
         return target_lvls
@@ -86,7 +86,7 @@ class SingleRoIExtractor(nn.Module):
         new_rois = torch.stack((rois[:, 0], x1, y1, x2, y2), dim=-1)
         return new_rois
 
-    @force_fp32(apply_to=('feats', ), out_fp16=True)
+    @force_fp32(apply_to=("feats",), out_fp16=True)
     def forward(self, feats, rois, roi_scale_factor=None):
         if len(feats) == 1:
             return self.roi_layers[0](feats[0], rois)
@@ -94,8 +94,7 @@ class SingleRoIExtractor(nn.Module):
         out_size = self.roi_layers[0].out_size
         num_levels = len(feats)
         target_lvls = self.map_roi_levels(rois, num_levels)
-        roi_feats = feats[0].new_zeros(
-            rois.size(0), self.out_channels, *out_size)
+        roi_feats = feats[0].new_zeros(rois.size(0), self.out_channels, *out_size)
         if roi_scale_factor is not None:
             rois = self.roi_rescale(rois, roi_scale_factor)
         for i in range(num_levels):

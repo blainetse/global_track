@@ -9,20 +9,21 @@ from ..utils import ConvModule
 
 @NECKS.register_module
 class FPN(nn.Module):
-
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 num_outs,
-                 start_level=0,
-                 end_level=-1,
-                 add_extra_convs=False,
-                 extra_convs_on_inputs=True,
-                 relu_before_extra_convs=False,
-                 no_norm_on_lateral=False,
-                 conv_cfg=None,
-                 norm_cfg=None,
-                 activation=None):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        num_outs,
+        start_level=0,
+        end_level=-1,
+        add_extra_convs=False,
+        extra_convs_on_inputs=True,
+        relu_before_extra_convs=False,
+        no_norm_on_lateral=False,
+        conv_cfg=None,
+        norm_cfg=None,
+        activation=None,
+    ):
         super(FPN, self).__init__()
         assert isinstance(in_channels, list)
         self.in_channels = in_channels
@@ -58,7 +59,8 @@ class FPN(nn.Module):
                 conv_cfg=conv_cfg,
                 norm_cfg=norm_cfg if not self.no_norm_on_lateral else None,
                 activation=self.activation,
-                inplace=False)
+                inplace=False,
+            )
             fpn_conv = ConvModule(
                 out_channels,
                 out_channels,
@@ -67,7 +69,8 @@ class FPN(nn.Module):
                 conv_cfg=conv_cfg,
                 norm_cfg=norm_cfg,
                 activation=self.activation,
-                inplace=False)
+                inplace=False,
+            )
 
             self.lateral_convs.append(l_conv)
             self.fpn_convs.append(fpn_conv)
@@ -89,14 +92,15 @@ class FPN(nn.Module):
                     conv_cfg=conv_cfg,
                     norm_cfg=norm_cfg,
                     activation=self.activation,
-                    inplace=False)
+                    inplace=False,
+                )
                 self.fpn_convs.append(extra_fpn_conv)
 
     # default init_weights for conv(msra) and norm in ConvModule
     def init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                xavier_init(m, distribution='uniform')
+                xavier_init(m, distribution="uniform")
 
     @auto_fp16()
     def forward(self, inputs):
@@ -112,13 +116,12 @@ class FPN(nn.Module):
         used_backbone_levels = len(laterals)
         for i in range(used_backbone_levels - 1, 0, -1):
             laterals[i - 1] += F.interpolate(
-                laterals[i], scale_factor=2, mode='nearest')
+                laterals[i], scale_factor=2, mode="nearest"
+            )
 
         # build outputs
         # part 1: from original levels
-        outs = [
-            self.fpn_convs[i](laterals[i]) for i in range(used_backbone_levels)
-        ]
+        outs = [self.fpn_convs[i](laterals[i]) for i in range(used_backbone_levels)]
         # part 2: add extra levels
         if self.num_outs > len(outs):
             # use max pool to get more levels on top of outputs
@@ -138,4 +141,5 @@ class FPN(nn.Module):
                         outs.append(self.fpn_convs[i](F.relu(outs[-1])))
                     else:
                         outs.append(self.fpn_convs[i](outs[-1]))
+
         return tuple(outs)

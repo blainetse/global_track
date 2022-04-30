@@ -11,18 +11,18 @@
             "program": "test_global_track.py", // 指定要以调试运行的程序代码
             "console": "integratedTerminal",
             "justMyCode": false, // 指定为true的话会跳过某些代码段
-            // "args": [
-            //     "--config",
-            //     "configs/qg_rcnn_r50_fpn.py",
-            //     "--load_from",
-            //     "checkpoints/qg_rcnn_r50_fpn_2x_20181010-443129e1.pth",
-            //     "--gpus",
-            //     "3"
-            // ],
-            "env": {
-                "DISPLAY": "10.17.227.19:0.0"
-                // "DISPLAY": "10.16.61.10:0.0"
-            }
+            "args": [
+                "--config",
+                "configs/qg_rcnn_r50_fpn.py",
+                "--load_from",
+                "checkpoints/qg_rcnn_r50_fpn_2x_20181010-443129e1.pth",
+                "--gpus",
+                "3"
+            ],
+            // "env": {
+            //     // "DISPLAY": "10.20.38.60:0.0"
+            //     "DISPLAY": "10.16.61.10:0.0"
+            // }
         }
     ]
 }
