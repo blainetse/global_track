@@ -28,13 +28,16 @@ class RPN_Modulator(nn.Module):
             out_channels=channels,
             featmap_strides=strides,
         )
+        # [ ] 功能：给一个权重，用于训练？
         self.proj_modulator = nn.ModuleList(
             [
                 nn.Conv2d(channels, channels, roi_out_size, padding=0)
                 for _ in range(featmap_num)
             ]
         )
+        # [ ] encoder?
         self.proj_out = nn.ModuleList(
+            # 将 RoI Align 之后的图片转换为 1*1 的大小进行编码
             [nn.Conv2d(channels, channels, 1, padding=0) for _ in range(featmap_num)]
         )
 
@@ -49,19 +52,33 @@ class RPN_Modulator(nn.Module):
     # 这里 f_z(z) 被提前处理，处理之后的结果为 modulator(in learn(feature_z, gt_bboxes_z) function)
     # 这部分需要使用 transformer 进行 encode (将 query 的信息融合到 search image 也就是当前帧中)，是否需要进行 decode 后续考虑?
     def inference(self, feats_x, modulator):
+        # TODO: 搞清楚这里的 feature_x.size ?= 以及最后一个维度为什么不等：使用 FPN 的原因
+        # feats_x[0] = [1, 256, 200, 304]  ==> ×8
+        # feats_x[1] = [1, 256, 100, 152]  ==> ×4
+        # feats_x[2] = [1, 256, 50, 76]  ==> ×2
+        # feats_x[3] = [1, 256, 25, 38]  ==> ×1
+        # 这里为什么只取最后 ×8 倍的结果？底层包含了丰富的位置信息，顶层包含语义信息
+        # 这里我们只需要 bbox，因此只取底层的即可
         n_imgs = len(feats_x[0])
         for i in range(n_imgs):
             n_instances = len(modulator[i])
             for j in range(n_instances):
-                query = modulator[i][j : j + 1]  # torch.Size([256, 7, 7])
-                # TODO: 这里 f 代表什么
+                # torch.Size([256, 7, 7]) 遍历 i-th 张图像帧的 RoI Align 后的 feature map
+                query = modulator[i][j : j + 1]
+                # TODO: 这里 f 代表什么：f 代表特征，取出 feats_x 列表中每一个 feature
+                # featmap_num=5 总共 5 个特征图，每一个 feature map 的 shape = [1, 256, 192, 336]
+                # 最后两个维度代表图像特征图的 size，经过 FPN 处理逐级减半
                 gallary = [f[i : i + 1] for f in feats_x]
                 out_ij = [
+                    # [ ] project modulator 实现的功能？一个 Conv2D 操作
+                    # 总共有 5 个 Conv2D，每一个负责一个 feature map，给一个权重，方便训练 RPN Loss?
+                    # [ ] 纠正：应该是 encoder 的实现，将 RoI Align 后的输出与 feature map 进行卷积点乘，简单的编码实现
                     self.proj_modulator[k](query) * gallary[k]
                     for k in range(len(gallary))
                 ]
-                # TODO: 最后输出的 decoder 之后的 x-feature map，同时为特定的 query rpn 编码后的特征图
+                # [ ] 最后输出的 decoder 之后的 x-feature map，同时为特定的 query rpn 编码后的特征图
                 # guide the detector to locate query-specific instances
+                # [ ] 这里实现的才是 encoder 操作，转换为 1×1 的矩阵后，使用 Conv2D 进行编码
                 out_ij = [p(o) for p, o in zip(self.proj_out, out_ij)]
                 yield out_ij, i, j
 

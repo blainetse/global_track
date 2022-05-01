@@ -77,6 +77,8 @@ class QG_RCNN(TwoStageDetector):
         gt_masks=None,
         proposals=None,
     ):
+        # [ ]: 注意这里 x 的 shape，每个维度特别是最后一个维度，为什么不一致？
+        # 推测是经过 FPN 特征金字塔网络得到不同 size 的 feature map?
         z = self.extract_feat(img_z)
         x = self.extract_feat(img_x)
 
