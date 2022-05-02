@@ -5,10 +5,30 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "oxuva", // 为当前调试器命名
+            "name": "TEST", // 为当前调试器命名
             "type": "python", // 以哪种解释器执行调试
             "request": "launch", // 修改内容对运行时无效
             "program": "test_global_track.py", // 指定要以调试运行的程序代码
+            "console": "integratedTerminal",
+            "justMyCode": false, // 指定为true的话会跳过某些代码段
+            "args": [
+                "--config",
+                "configs/qg_rcnn_r50_fpn.py",
+                "--load_from",
+                "checkpoints/qg_rcnn_r50_fpn_2x_20181010-443129e1.pth",
+                "--gpus",
+                "3"
+            ],
+            "env": {
+                // "DISPLAY": "10.17.45.7:0.0"
+                // "DISPLAY": "10.16.61.10:0.0"
+            }
+        },
+        {
+            "name": "TRAIN", // 为当前调试器命名
+            "type": "python", // 以哪种解释器执行调试
+            "request": "launch", // 修改内容对运行时无效
+            "program": "train_qg_rcnn.py", // 指定要以调试运行的程序代码
             "console": "integratedTerminal",
             "justMyCode": false, // 指定为true的话会跳过某些代码段
             "args": [

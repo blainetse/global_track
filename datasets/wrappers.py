@@ -20,6 +20,7 @@ def _datasets(name):
     elif name == 'got10k_val':
         return data.GOT10k(subset='val')
     elif name == 'lasot_train':
+        # BUG
         return data.LaSOT(subset='train')
     elif name == 'imagenet_vid':
         return data.ImageNetVID(subset=['train', 'val'])

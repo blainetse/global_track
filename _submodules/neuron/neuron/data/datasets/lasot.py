@@ -30,12 +30,12 @@ class LaSOT(SeqDataset):
         # dataset name and paths
         assert subset in ['train', 'test'], 'Unknown subset.'
         if root_dir is None:
-            root_dir = osp.expanduser('/data/LaSOTBenchmark')
+            root_dir = osp.expanduser('/data/LaSOT/LaSOTBenchmark')
         self.root_dir = root_dir
         self.subset = subset
         self.name = 'LaSOT_{}'.format(subset)
 
-        # initialize dataset
+        # BUG nitialize dataset
         super(LaSOT, self).__init__(self.name,
                                     root_dir=self.root_dir,
                                     subset=self.subset)

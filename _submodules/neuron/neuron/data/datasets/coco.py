@@ -6,7 +6,7 @@ import neuron.ops as ops
 from neuron.config import registry
 from .dataset import ImageDataset
 
-__all__ = ['COCODetection']
+__all__ = ["COCODetection"]
 
 
 @registry.register_module
@@ -15,7 +15,7 @@ class COCODetection(ImageDataset):
 
     Publication:
         ``Microsoft COCO: Common Objects in Context``, T. Y. Lin, M. Maire, S. Belongie, et. al., arXiv 2014.
-    
+
     Args:
         root_dir (string): Root directory of dataset where ``Data`` and
             ``Annotations`` folders exist.
@@ -26,48 +26,112 @@ class COCODetection(ImageDataset):
         transforms (object, optional): Augmentations applied to each dataset item.
             Default is None.
     """
-    CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-               'train', 'truck', 'boat', 'traffic_light', 'fire_hydrant',
-               'stop_sign', 'parking_meter', 'bench', 'bird', 'cat', 'dog',
-               'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe',
-               'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
-               'skis', 'snowboard', 'sports_ball', 'kite', 'baseball_bat',
-               'baseball_glove', 'skateboard', 'surfboard', 'tennis_racket',
-               'bottle', 'wine_glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
-               'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot',
-               'hot_dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
-               'potted_plant', 'bed', 'dining_table', 'toilet', 'tv', 'laptop',
-               'mouse', 'remote', 'keyboard', 'cell_phone', 'microwave',
-               'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock',
-               'vase', 'scissors', 'teddy_bear', 'hair_drier', 'toothbrush')
+    CLASSES = (
+        "person",
+        "bicycle",
+        "car",
+        "motorcycle",
+        "airplane",
+        "bus",
+        "train",
+        "truck",
+        "boat",
+        "traffic_light",
+        "fire_hydrant",
+        "stop_sign",
+        "parking_meter",
+        "bench",
+        "bird",
+        "cat",
+        "dog",
+        "horse",
+        "sheep",
+        "cow",
+        "elephant",
+        "bear",
+        "zebra",
+        "giraffe",
+        "backpack",
+        "umbrella",
+        "handbag",
+        "tie",
+        "suitcase",
+        "frisbee",
+        "skis",
+        "snowboard",
+        "sports_ball",
+        "kite",
+        "baseball_bat",
+        "baseball_glove",
+        "skateboard",
+        "surfboard",
+        "tennis_racket",
+        "bottle",
+        "wine_glass",
+        "cup",
+        "fork",
+        "knife",
+        "spoon",
+        "bowl",
+        "banana",
+        "apple",
+        "sandwich",
+        "orange",
+        "broccoli",
+        "carrot",
+        "hot_dog",
+        "pizza",
+        "donut",
+        "cake",
+        "chair",
+        "couch",
+        "potted_plant",
+        "bed",
+        "dining_table",
+        "toilet",
+        "tv",
+        "laptop",
+        "mouse",
+        "remote",
+        "keyboard",
+        "cell_phone",
+        "microwave",
+        "oven",
+        "toaster",
+        "sink",
+        "refrigerator",
+        "book",
+        "clock",
+        "vase",
+        "scissors",
+        "teddy_bear",
+        "hair_drier",
+        "toothbrush",
+    )
 
-    def __init__(self,
-                 root_dir=None,
-                 version=2017,
-                 subset='val',
-                 transforms=None):
+    def __init__(self, root_dir=None, version=2017, subset="val", transforms=None):
         if root_dir is None:
-            root_dir = osp.expanduser('/data/coco')
-        super(COCODetection,
-              self).__init__(name='COCO{}_{}'.format(version, subset),
-                             root_dir=root_dir,
-                             version=version,
-                             subset=subset)
+            root_dir = osp.expanduser("/data/coco")
+        super(COCODetection, self).__init__(
+            name="COCO{}_{}".format(version, subset),
+            root_dir=root_dir,
+            version=version,
+            subset=subset,
+        )
         self.transforms = transforms
 
     def _construct_img_dict(self, root_dir, version, subset):
-        # image and annotation paths
-        img_dir = osp.join(root_dir, '{}{}'.format(subset, version))
+        # [x] image and annotation paths
+        # 增加一个 "image"，不然会提示找不到路径
+        img_dir = osp.join(root_dir, "images", "{}{}".format(subset, version))
         ann_file = osp.join(
-            root_dir,
-            'annotations/instances_{}{}.json'.format(subset, version))
+            root_dir, "annotations/instances_{}{}.json".format(subset, version)
+        )
         coco = COCO(ann_file)
-        img_infos = coco.dataset['images']
+        img_infos = coco.dataset["images"]
         # filter small images
-        img_infos = [
-            u for u in img_infos if min(u['width'], u['height']) >= 32
-        ]
-        img_ids = [u['id'] for u in img_infos]
+        img_infos = [u for u in img_infos if min(u["width"], u["height"]) >= 32]
+        img_ids = [u["id"] for u in img_infos]
 
         # make class IDs contiguous
         self._cat2id = {v: i + 1 for i, v in enumerate(coco.getCatIds())}
@@ -77,8 +141,9 @@ class COCODetection(ImageDataset):
         img_dict = {}
         for i, img_id in enumerate(img_ids):
             if i % 1000 == 0 or i + 1 == len(img_ids):
-                ops.sys_print('Processing image [%d/%d]: %d...' %
-                              (i + 1, len(img_ids), img_id))
+                ops.sys_print(
+                    "Processing image [%d/%d]: %d..." % (i + 1, len(img_ids), img_id)
+                )
 
             # load annotation
             ann_id = coco.getAnnIds(imgIds=img_id)
@@ -88,39 +153,39 @@ class COCODetection(ImageDataset):
                 continue
 
             # read image
-            img_file = coco.loadImgs(img_id)[0]['file_name']
+            img_file = coco.loadImgs(img_id)[0]["file_name"]
             img_file = osp.join(img_dir, img_file)
 
             # read bboxes, labels and mask polygons
-            bboxes = [obj['bbox'] for obj in anno]
+            bboxes = [obj["bbox"] for obj in anno]
             bboxes = np.array(bboxes, dtype=np.float32).reshape(-1, 4)
             bboxes[:, 2:] = bboxes[:, :2] + bboxes[:, 2:] - 1
 
-            labels = [obj['category_id'] for obj in anno]
+            labels = [obj["category_id"] for obj in anno]
             labels = [self._cat2id[c] for c in labels]
             labels = np.array(labels, dtype=np.int64)
 
-            mask_polys = [obj['segmentation'] for obj in anno]
+            mask_polys = [obj["segmentation"] for obj in anno]
             for j, poly in enumerate(mask_polys):
                 # valid polygons have >= 3 points (6 coordinates)
                 mask_polys[j] = [np.array(p) for p in poly if len(p) > 6]
 
             # update img_dict
             img_dict[img_id] = {
-                'img_file': img_file,
-                'target': {
-                    'bboxes': bboxes,
-                    'labels': labels,
-                    'mask_polys': mask_polys,
-                    'meta': img_infos[i]
-                }
+                "img_file": img_file,
+                "target": {
+                    "bboxes": bboxes,
+                    "labels": labels,
+                    "mask_polys": mask_polys,
+                    "meta": img_infos[i],
+                },
             }
 
         return img_dict
 
     def _check_obj(self, obj):
-        _, _, w, h = obj['bbox']
-        ignore = obj.get('ignore', False)
-        if obj['iscrowd'] or ignore or w < 1 or h < 1:
+        _, _, w, h = obj["bbox"]
+        ignore = obj.get("ignore", False)
+        if obj["iscrowd"] or ignore or w < 1 or h < 1:
             return False
         return True

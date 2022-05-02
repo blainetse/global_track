@@ -92,7 +92,7 @@ def main():
     # build model
     model = build_detector(cfg.model, train_cfg=cfg.train_cfg, test_cfg=cfg.test_cfg)
 
-    # build dataset
+    # BUG build dataset
     train_dataset = build_dataset(cfg.data.train)
     if cfg.checkpoint_config is not None:
         cfg.checkpoint_config.meta = {

@@ -80,7 +80,7 @@ class RPN_Modulator(nn.Module):
                 # guide the detector to locate query-specific instances
                 # [ ] 这里实现的才是 encoder 操作，转换为 1×1 的矩阵后，使用 Conv2D 进行编码
                 out_ij = [p(o) for p, o in zip(self.proj_out, out_ij)]
-                yield out_ij, i, j
+                yield out_ij, i, j  # Generator, 通过 next 进行调用的时候实现，产生对应的输出
 
     def learn(self, feats_z, gt_bboxes_z):
         # 将目标从 Query Image 裁剪出来
