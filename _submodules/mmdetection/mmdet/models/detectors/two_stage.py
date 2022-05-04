@@ -89,7 +89,14 @@ class TwoStageDetector(BaseDetector, RPNTestMixin, BBoxTestMixin, MaskTestMixin)
 
     def extract_feat(self, img):
         """Directly extract features from the backbone+neck"""
+        # torch.Size([1, 256, 192, 336])
+        # torch.Size([1, 256, 96, 168])
+        # torch.Size([1, 256, 48, 84])
+        # torch.Size([1, 256, 24, 42])
         x = self.backbone(img)
+        # [ ] 经过 neck 之后，增加了一个 feature map
+        # torch.Size([1, 256, 12, 21])
+        # 所以这里 neck 的作用是？
         if self.with_neck:
             x = self.neck(x)
         return x

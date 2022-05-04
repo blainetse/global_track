@@ -9,6 +9,11 @@ from . import roi_align_cuda
 class RoIAlignFunction(Function):
     @staticmethod
     def forward(ctx, features, rois, out_size, spatial_scale, sample_num=0):
+        # features: [1, 256, 48, 84]
+        # rois: [1, 5]
+        # out_size: (7, 7)
+        # spatial_scale: 0.0625
+        # sample_num: 2
         out_h, out_w = _pair(out_size)
         assert isinstance(out_h, int) and isinstance(out_w, int)
         ctx.spatial_scale = spatial_scale
@@ -87,6 +92,11 @@ class RoIAlign(nn.Module):
                 features, rois, self.out_size, self.spatial_scale, self.sample_num
             )
         else:
+            # features: [1, 256, 48, 84]
+            # rois: [1, 5]
+            # out_size: (7, 7)
+            # spatial_scale: 0.0625
+            # sample_num: 2
             return roi_align(
                 features, rois, self.out_size, self.spatial_scale, self.sample_num
             )

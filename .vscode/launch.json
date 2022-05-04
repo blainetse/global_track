@@ -10,7 +10,7 @@
             "request": "launch", // 修改内容对运行时无效
             "program": "test_global_track.py", // 指定要以调试运行的程序代码
             "console": "integratedTerminal",
-            "justMyCode": false, // 指定为true的话会跳过某些代码段
+            "justMyCode": true, // 指定为true的话会跳过某些代码段
             "args": [
                 "--config",
                 "configs/qg_rcnn_r50_fpn.py",
@@ -30,7 +30,7 @@
             "request": "launch", // 修改内容对运行时无效
             "program": "train_qg_rcnn.py", // 指定要以调试运行的程序代码
             "console": "integratedTerminal",
-            "justMyCode": false, // 指定为true的话会跳过某些代码段
+            "justMyCode": true, // 指定为true的话会跳过某些代码段
             "args": [
                 "--config",
                 "configs/qg_rcnn_r50_fpn.py",

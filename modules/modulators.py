@@ -52,12 +52,13 @@ class RPN_Modulator(nn.Module):
     # 这里 f_z(z) 被提前处理，处理之后的结果为 modulator(in learn(feature_z, gt_bboxes_z) function)
     # 这部分需要使用 transformer 进行 encode (将 query 的信息融合到 search image 也就是当前帧中)，是否需要进行 decode 后续考虑?
     def inference(self, feats_x, modulator):
-        # TODO: 搞清楚这里的 feature_x.size ?= 以及最后一个维度为什么不等：使用 FPN 的原因
-        # feats_x[0] = [1, 256, 200, 304]  ==> ×8
-        # feats_x[1] = [1, 256, 100, 152]  ==> ×4
-        # feats_x[2] = [1, 256, 50, 76]  ==> ×2
-        # feats_x[3] = [1, 256, 25, 38]  ==> ×1
-        # 这里为什么只取最后 ×8 倍的结果？底层包含了丰富的位置信息，顶层包含语义信息
+        # TODO: 搞清楚这里的 feature_x.size() ?= 以及最后一个维度为什么不等：使用 FPN 的原因
+        # feats_x[0] = [1, 256, 192, 336]  ==> ×16
+        # feats_x[1] = [1, 256, 96, 168]  ==> ×8
+        # feats_x[2] = [1, 256, 48, 84]  ==> ×4
+        # feats_x[3] = [1, 256, 24, 42]  ==> ×2
+        # feats_x[3] = [1, 256, 12, 21]  ==> ×1
+        # 这里为什么只取最后 ×16 倍的结果？底层包含了丰富的位置信息，顶层包含语义信息
         # 这里我们只需要 bbox，因此只取底层的即可
         n_imgs = len(feats_x[0])
         for i in range(n_imgs):
@@ -70,9 +71,8 @@ class RPN_Modulator(nn.Module):
                 # 最后两个维度代表图像特征图的 size，经过 FPN 处理逐级减半
                 gallary = [f[i : i + 1] for f in feats_x]
                 out_ij = [
-                    # [ ] project modulator 实现的功能？一个 Conv2D 操作
+                    # [ ] FPN project modulator 实现的功能？一个 Conv2D 操作
                     # 总共有 5 个 Conv2D，每一个负责一个 feature map，给一个权重，方便训练 RPN Loss?
-                    # [ ] 纠正：应该是 encoder 的实现，将 RoI Align 后的输出与 feature map 进行卷积点乘，简单的编码实现
                     self.proj_modulator[k](query) * gallary[k]
                     for k in range(len(gallary))
                 ]
@@ -84,13 +84,19 @@ class RPN_Modulator(nn.Module):
 
     def learn(self, feats_z, gt_bboxes_z):
         # 将目标从 Query Image 裁剪出来
+        # gt_bboxes_z: [1, 4]
+        # rois: [1, 5] 增加了一个维度 batch_ind
         rois = bbox2roi(gt_bboxes_z)
         # 这一步应该就是 RoI Align 将 GT 从 feature map 中裁剪出来
-        bbox_feats = self.roi_extractor(feats_z[: self.roi_extractor.num_inputs], rois)
+        # [ ] roi_extractor.num_inputs = len(self.featmap_strides) = 4
+        # feats_z, [1, 5] FPN 结构
+        # feats_z[: 4], [1, 4] 只取前四个
+        bbox_feats = self.roi_extractor(feats_z[: self.roi_extractor.num_inputs], rois)  # [1, 256, 7, 7]
         # 这里要弄清楚到底是不是在进行编码，还是说在进行一个 projection 的操作
         # 解答：这里不是编码过程，只是在对 query image 的特征进行一个处理转换
         # 将经过 RoI Align 得到的 feature map 和 Search Region 对应起来，对应到其中的位置？
         # modulation 调制，调控，调节
+        # modulator 每个 gt_box 对应的 bbox_feat
         modulator = [bbox_feats[rois[:, 0] == j] for j in range(len(gt_bboxes_z))]
         return modulator
 
@@ -109,11 +115,18 @@ class RCNN_Modulator(nn.Module):
         self.proj_out = nn.Conv2d(channels, channels, 1)
 
     def forward(self, z, x):
+        # z: [1, 256, 7, 7]
+        # x: [1000, 256, 7, 7]
         return self.inference(x, self.learn(z))
 
     def inference(self, x, modulator):
         # assume one image and one instance only
         assert len(modulator) == 1
+        # [ ] x: [1000, 256, 7, 7]
+        # modulator: [1, 256, 7, 7]
+        # self.proj_x(x): [1000, 256, 7, 7]
+        # self.proj_x(x) * modulator: [1000, 256, 7, 7]
+        # [1000, 256, 7, 7]
         return self.proj_out(self.proj_x(x) * modulator)
 
     def learn(self, z):

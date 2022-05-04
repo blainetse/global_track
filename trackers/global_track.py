@@ -64,7 +64,7 @@ class GlobalTrack(OxUvA_Tracker):
         img = img.unsqueeze(0).contiguous().to(self.device, non_blocking=True)
 
         # get detections
-        results = self.model._process_gallary(img, [img_meta], rescale=True, **kwargs)
+        results = self.model._process_gallary(img, [img_meta], rescale=True, **kwargs)  # (383, 5)
         threshold = 0.84
 
         if not kwargs.get("return_all", False):

@@ -185,12 +185,16 @@ class QG_RCNN(TwoStageDetector):
 
     def simple_test(self, img_z, img_x, img_meta_z, img_meta_x, gt_bboxes_z, **kwargs):
         # assume one image and one instance only
+        # [ ] 这里只假设了一张图像和一个实例
+        # image: 代表一张图像帧
+        # instance: 代表？
         assert len(img_z) == 1
         z = self.extract_feat(img_z)
         x = self.extract_feat(img_x)
 
         # RPN forward
         rpn_feats = next(self.rpn_modulator(z, x, gt_bboxes_z))[0]
+        # [ ] 产生多少个 region proposal
         proposal_list = self.simple_test_rpn(rpn_feats, img_meta_x, self.test_cfg.rpn)
 
         # RCNN forward
@@ -205,6 +209,7 @@ class QG_RCNN(TwoStageDetector):
 
         return proposals, bboxes
 
+    # [ ] 该部分得到最终的目标框的个数：383
     def simple_test_bboxes(
         self,
         z,
@@ -229,7 +234,7 @@ class QG_RCNN(TwoStageDetector):
             x[: self.bbox_roi_extractor.num_inputs], rois_x
         )
 
-        # do modulation
+        # [ ] do modulation
         roi_feats = self.rcnn_modulator(bbox_feats_z, bbox_feats_x)
         if self.with_shared_head:
             roi_feats = self.shared_head(roi_feats)
@@ -239,6 +244,7 @@ class QG_RCNN(TwoStageDetector):
         img_shape = img_meta_x[0]["img_shape"]
         scale_factor = img_meta_x[0]["scale_factor"]
 
+        # get_det_bboxes: 获取检测框的坐标
         if keep_order:
             det_bboxes, det_labels = self.bbox_head.get_det_bboxes(
                 rois_x,
@@ -271,17 +277,43 @@ class QG_RCNN(TwoStageDetector):
         raise NotImplementedError("show_result is not implemented for QG_RCNN")
 
     def _process_query(self, img_z, gt_bboxes_z):
+        """
+        传入的两个参数都和 z 相关，因此可以结合函数名推断出该函数的功能为：
+        获取目标的 bbox 坐标
+        """
         self._query = self.extract_feat(img_z)
         self._gt_bboxes_z = gt_bboxes_z
 
     def _process_gallary(self, img_x, img_meta_x, **kwargs):
+        """
+        gallary: 画廊
+        推断出这里表示的是画出的一系列 region proposal
+        最后通过前向传递计算损失函数得到和 gt_box 最相似的那一个（这里作者只取分数最高的那一个作为追踪的结果）
+        """
+        # [ ] img_x: [1, 3, 768, 1344] 由于是测试，指定的图像帧为一张
+        # 经过 backbone 之后的 shape:
+        # torch.Size([1, 256, 192, 336])
+        # torch.Size([1, 256, 96, 168])
+        # torch.Size([1, 256, 48, 84])
+        # torch.Size([1, 256, 24, 42])
+        # torch.Size([1, 256, 12, 21])
         x = self.extract_feat(img_x)
 
-        # RPN forward
+        # [ ] RPN forward
+        # rpn_feats ~= out_ij i-th image j-th region proposal
+        # torch.Size([1, 256, 192, 336])
+        # torch.Size([1, 256, 96, 168])
+        # torch.Size([1, 256, 48, 84])
+        # torch.Size([1, 256, 24, 42])
+        # torch.Size([1, 256, 12, 21])
         rpn_feats = next(self.rpn_modulator(self._query, x, self._gt_bboxes_z))[0]
+        # [1000, 5]
         proposal_list = self.simple_test_rpn(rpn_feats, img_meta_x, self.test_cfg.rpn)
 
-        # RCNN forward
+        # [ ] RCNN forward
+        # 得到最终追踪（检测）的目标的 bbox 坐标以及标签
+        # det_bboxes: [383, 5]
+        # det_labels: [383]
         det_bboxes, det_labels = self.simple_test_bboxes(
             self._query,
             x,

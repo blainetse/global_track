@@ -31,13 +31,14 @@ model = dict(
         out_channels=256,
         featmap_strides=[4, 8, 16, 32],
     ),
+    # [ ]
     bbox_head=dict(
         type="SharedFCBBoxHead",
         num_fcs=2,
         in_channels=256,
         fc_out_channels=1024,
         roi_feat_size=7,
-        num_classes=2,
+        num_classes=2,  # 前景（目标） + 背景
         target_means=[0.0, 0.0, 0.0, 0.0],
         target_stds=[0.1, 0.1, 0.2, 0.2],
         reg_class_agnostic=False,
@@ -47,6 +48,7 @@ model = dict(
 )
 # model training and testing settings
 train_cfg = dict(
+    # [ ] rpn
     rpn=dict(
         assigner=dict(
             type="MaxIoUAssigner",
@@ -74,6 +76,7 @@ train_cfg = dict(
         nms_thr=0.7,
         min_bbox_size=0,
     ),
+    # [ ]
     rcnn=dict(
         assigner=dict(
             type="MaxIoUAssigner",
@@ -123,8 +126,10 @@ data = dict(
         with_label=True,
     ),
 )
+
 # optimizer
 optimizer = dict(type="SGD", lr=0.01, momentum=0.9, weight_decay=0.0001)  # origin: 0.02
+
 # runner configs
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 lr_config = dict(
@@ -132,6 +137,7 @@ lr_config = dict(
 )
 checkpoint_config = dict(interval=1)
 log_config = dict(interval=50, hooks=[dict(type="TextLoggerHook")])
+
 # runtime settings
 total_epochs = 12
 cudnn_benchmark = True
